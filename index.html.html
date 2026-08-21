@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>فزورة لايف — Fazzora Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@400;500;700;900&family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --stage:#160B2E; --stage-2:#1F1140; --panel:#241542; --panel-2:#2E1B54;
+    --coral:#FF4D6D; --coral-dark:#C22F49; --gold:#FFC145; --gold-dark:#B8862A;
+    --green:#3DDC97; --text-light:#F6F1FF; --text-muted:#B7A6DE; --violet-line: rgba(180,150,255,.18);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(255,196,69,.16), transparent 60%),
+      radial-gradient(ellipse 700px 700px at 50% 30%, rgba(255,77,109,.14), transparent 55%),
+      var(--stage);
+    font-family:'Tajawal', sans-serif; color:var(--text-light); min-height:100vh;
+    padding:32px 16px 64px; display:flex; flex-direction:column; align-items:center; overflow-x:hidden;
+  }
+  .top-label{ font-family:'Chakra Petch',monospace; letter-spacing:.12em; font-size:12px; color:var(--gold); text-transform:uppercase; margin-bottom:6px;}
+  h1.brand{ font-family:'Baloo Bhaijaan 2', sans-serif; font-weight:800; font-size:30px; margin-bottom:8px;}
+  h1.brand span{color:var(--coral);}
+  .conn-status{ font-size:11px; color:var(--text-muted); margin-bottom:18px; font-family:'Chakra Petch'; }
+  .conn-status.live{ color:var(--green); }
+
+  .phone-wrap{ position:relative; }
+  .phone-wrap::before{
+    content:''; position:absolute; inset:-60px -60px auto -60px; height:340px;
+    background:radial-gradient(ellipse at 50% 0%, rgba(255,196,69,.35), transparent 70%); filter:blur(4px); pointer-events:none; z-index:0;
+  }
+  .phone{
+    position:relative; z-index:1; width:360px; height:720px;
+    background:linear-gradient(180deg,var(--stage-2),var(--stage));
+    border:10px solid #0D0620; border-radius:46px; box-shadow:0 40px 80px rgba(0,0,0,.55); overflow:hidden;
+  }
+  .notch{ position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:22px; background:#0D0620; border-radius:0 0 16px 16px; z-index:6;}
+  .screen{ position:absolute; inset:0; padding:44px 18px 20px; display:flex; flex-direction:column; animation:fadeIn .3s ease; overflow-y:auto;}
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); z-index:50;
+    background:var(--panel-2); border:1px solid var(--gold); color:var(--text-light); font-size:12px; font-weight:700;
+    padding:10px 18px; border-radius:999px; opacity:0; transition:.35s;}
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .primary-btn{ margin-top:14px; background:var(--coral); color:#fff; border:none; border-radius:16px;
+    font-family:'Baloo Bhaijaan 2'; font-weight:700; font-size:15px; padding:13px; cursor:pointer;
+    box-shadow:0 8px 20px rgba(255,77,109,.35); width:100%;}
+  .primary-btn:disabled{ opacity:.4; box-shadow:none; }
+  .secondary-btn{ background:transparent; border:1px solid var(--violet-line); color:var(--text-muted);
+    border-radius:16px; font-family:'Tajawal'; font-weight:700; font-size:13px; padding:11px; cursor:pointer; width:100%; margin-top:8px;}
+  .waiting-note{ text-align:center; font-size:11px; color:var(--text-muted); margin-top:14px;}
+  .screen-title{ font-family:'Baloo Bhaijaan 2'; font-weight:700; font-size:18px; text-align:center; margin-bottom:14px;}
+  .text-input{ background:var(--panel); border:1.5px solid var(--violet-line); border-radius:12px; color:var(--text-light);
+    font-family:'Tajawal'; font-weight:700; font-size:14px; padding:12px; text-align:center; margin-bottom:10px; width:100%;}
+  .text-input.code-input{ font-family:'Chakra Petch'; letter-spacing:.2em; font-size:20px; direction:ltr; }
+  .role-card{ background:var(--panel); border:1.5px solid var(--violet-line); border-radius:16px; padding:18px; text-align:center; margin-bottom:12px; cursor:pointer;}
+  .role-card b{ display:block; font-family:'Baloo Bhaijaan 2'; font-size:16px; margin-bottom:4px;}
+  .role-card span{ font-size:11px; color:var(--text-muted);}
+  .err-msg{ text-align:center; font-size:11px; color:var(--coral); margin-top:8px; min-height:14px;}
+
+  .game-name{ font-family:'Baloo Bhaijaan 2'; font-weight:700; font-size:19px; text-align:center; margin-bottom:14px;}
+  .code-box{ display:flex; justify-content:center; gap:6px; margin-bottom:6px; direction:ltr;}
+  .digit{ font-family:'Chakra Petch'; font-weight:700; font-size:24px; width:32px; height:42px; background:var(--panel); border:1px solid var(--gold); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--gold);}
+  .code-hint{ text-align:center; font-size:11px; color:var(--text-muted); margin-bottom:14px;}
+  .ready-count{ text-align:center; font-family:'Chakra Petch'; font-size:13px; font-weight:600; color:var(--green); margin-bottom:10px;}
+  .players{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:7px; min-height:0;}
+  .player-row{ display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--violet-line); border-radius:14px; padding:7px 12px;}
+  .avatar{ width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; background:var(--panel-2); border:1px solid var(--violet-line); flex-shrink:0;}
+  .player-name{ font-weight:700; font-size:12px; flex:1;}
+  .joined-tag{ font-size:9px; color:var(--text-muted);}
+  .spec-row{ opacity:.7; border-style:dashed;}
+  .spec-tag{ font-size:9px; color:var(--gold);}
+  .host-tag{ font-size:9px; color:var(--coral); font-weight:700;}
+
+  .q-topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; min-height:28px;}
+  .q-badge{ font-family:'Chakra Petch'; font-size:10px; font-weight:600; padding:4px 10px; border-radius:999px; letter-spacing:.05em;}
+  .q-badge.double{ background:var(--gold); color:#432D06;}
+  .q-badge.final{ background:linear-gradient(90deg,var(--coral),var(--gold)); color:#3A0A16;}
+  .q-badge.social{ background:var(--panel-2); color:var(--text-light); border:1px solid var(--gold);}
+  .timer-ring{ position:relative; width:42px; height:42px;}
+  .timer-ring svg{ transform:rotate(-90deg);}
+  .timer-num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Chakra Petch'; font-weight:700; font-size:14px; color:var(--gold);}
+  .q-text{ font-family:'Baloo Bhaijaan 2'; font-weight:700; font-size:18px; line-height:1.5; margin-bottom:14px; text-align:center;}
+  .options{ display:flex; flex-direction:column; gap:9px;}
+  .opt{ background:var(--panel); border:1.5px solid var(--violet-line); border-radius:14px; padding:12px 14px; font-size:13px; font-weight:700; cursor:pointer; text-align:right; transition:.15s;}
+  .opt.selected{ border-color:var(--coral); background:rgba(255,77,109,.22); box-shadow:0 0 0 1px var(--coral) inset;}
+  .opt.locked{ border-color:var(--green); }
+  .opt.disabled{ pointer-events:none; opacity:.7;}
+  .answered-count{ text-align:center; font-size:11px; color:var(--text-muted); margin-top:12px;}
+  .lock-btn{ margin-top:auto; align-self:center; font-size:11px; color:var(--gold); background:transparent; border:1px solid var(--gold); border-radius:999px; padding:6px 16px; cursor:pointer;}
+  .lock-btn:disabled{ opacity:.4;}
+  .lock-note{ text-align:center; font-size:10px; color:var(--green); margin-top:auto;}
+  .spectator-note{ flex:1; display:flex; align-items:center; justify-content:center; text-align:center; color:var(--text-muted); font-size:13px;}
+
+  .reveal-badge{ text-align:center; font-size:11px; color:var(--text-muted); margin-bottom:6px;}
+  .reveal-q{ font-family:'Baloo Bhaijaan 2'; font-size:14px; text-align:center; margin-bottom:12px;}
+  .bar-row{ margin-bottom:8px;}
+  .bar-label{ display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;}
+  .bar-track{ background:var(--panel); border-radius:8px; height:10px; overflow:hidden; border:1px solid var(--violet-line);}
+  .bar-fill{ height:100%; background:var(--violet-line); border-radius:8px; transition:width .6s ease;}
+  .bar-fill.correct{ background:var(--green);}
+  .bar-fill.majority{ background:var(--gold);}
+  .result-box{ text-align:center; margin-top:14px; background:var(--panel); border:1px solid var(--violet-line); border-radius:14px; padding:12px;}
+  .result-points{ font-family:'Chakra Petch'; font-weight:700; font-size:22px; color:var(--green);}
+  .result-points.zero{ color:var(--text-muted);}
+  .result-delta{ font-size:12px; font-weight:700; margin-top:4px;}
+  .combo-overlay{ position:absolute; top:44%; left:50%; transform:translate(-50%,-50%) scale(.6); z-index:20;
+    background:linear-gradient(90deg,var(--coral),var(--gold)); color:#2A0A12; font-family:'Baloo Bhaijaan 2';
+    font-weight:800; font-size:18px; padding:12px 22px; border-radius:16px; opacity:0; pointer-events:none;
+    animation:comboPop 1.4s ease forwards;}
+  @keyframes comboPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(.5);} 25%{opacity:1; transform:translate(-50%,-50%) scale(1.08);} 75%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-60%) scale(.95);} }
+
+  .lb-row{ display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--violet-line); border-radius:14px; padding:9px 12px; margin-bottom:7px;}
+  .lb-row.gold{ border-color:var(--gold); background:rgba(255,193,69,.12);}
+  .lb-rank{ font-family:'Chakra Petch'; font-weight:700; font-size:13px; width:18px; color:var(--text-muted);}
+  .lb-row.gold .lb-rank{ color:var(--gold);}
+  .lb-name{ flex:1; font-weight:700; font-size:12px;}
+  .lb-score{ font-family:'Chakra Petch'; font-weight:600; font-size:12px;}
+  .lb-delta{ font-size:11px; font-weight:700; width:24px; text-align:center;}
+  .up{ color:var(--green);} .down{ color:var(--coral);} .same{ color:var(--text-muted);}
+
+  .center-flex{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px;}
+  .final-flash{ font-family:'Baloo Bhaijaan 2'; font-weight:800; font-size:24px; background:linear-gradient(90deg,var(--coral),var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .calc-dots span{ animation:blink 1.2s infinite; }
+  .calc-dots span:nth-child(2){animation-delay:.2s} .calc-dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{ 0%,100%{opacity:.2} 50%{opacity:1} }
+
+  .win-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; position:relative;}
+  .confetti{ position:absolute; inset:0; overflow:hidden; pointer-events:none;}
+  .confetti i{ position:absolute; top:-10%; width:7px; height:12px; opacity:0; border-radius:2px; animation:fall 2.6s ease-in forwards;}
+  @keyframes fall{ 0%{opacity:0; transform:translateY(0) rotate(0deg);} 8%{opacity:1;} 100%{opacity:.9; transform:translateY(640px) rotate(400deg);} }
+  .trophy{ font-size:48px; margin-bottom:4px;}
+  .win-name{ font-family:'Baloo Bhaijaan 2'; font-weight:800; font-size:22px; color:var(--gold);}
+  .win-sub{ font-size:12px; color:var(--text-muted); margin-bottom:18px;}
+  .badges{ display:flex; gap:7px; margin-bottom:18px;}
+  .badge{ background:var(--panel); border:1px solid var(--violet-line); border-radius:12px; padding:9px 6px; width:86px; font-size:9px; color:var(--text-muted);}
+  .badge b{ display:block; font-family:'Chakra Petch'; font-size:10px; color:var(--text-light); margin-top:3px;}
+  .rankcard{ background:var(--panel); border:1px solid var(--violet-line); border-radius:16px; padding:20px; text-align:center;}
+  .rankcard .rk-num{ font-family:'Chakra Petch'; font-size:13px; color:var(--text-muted);}
+  .rankcard .rk-name{ font-family:'Baloo Bhaijaan 2'; font-size:20px; margin:6px 0;}
+  .rankcard .rk-score{ font-family:'Chakra Petch'; font-size:13px; color:var(--gold);}
+
+  .setup-box{ background:var(--panel); border:1px solid var(--coral); border-radius:16px; padding:20px; text-align:center; font-size:12px; line-height:1.8; color:var(--text-muted);}
+  .setup-box b{ color:var(--text-light);}
+
+  .game-chrome{ display:none; gap:8px; margin-top:16px; width:360px; max-width:92vw; }
+  .chrome-btn{ flex:1; background:var(--panel); border:1px solid var(--violet-line); color:var(--text-muted);
+    border-radius:12px; font-family:'Tajawal'; font-weight:700; font-size:11px; padding:9px; cursor:pointer; }
+  .chrome-btn.danger{ border-color:var(--coral); color:var(--coral); }
+</style>
+</head>
+<body>
+
+<div class="top-label">فزورة لايف — نسخة تجريبية للعب الجماعي المباشر</div>
+<h1 class="brand">فزورة <span>لايف</span></h1>
+<div class="conn-status" id="connStatus">غير متصل</div>
+
+<div class="phone-wrap">
+  <div class="phone" id="phone">
+    <div class="notch"></div>
+    <div id="screenRoot"></div>
+  </div>
+</div>
+<div class="game-chrome" id="gameChrome">
+  <button class="chrome-btn" id="exitBtn">الخروج من اللعبة</button>
+  <button class="chrome-btn danger" id="endGameBtn" style="display:none;">إنهاء اللعبة للجميع</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= DATA ================= */
+const QUESTIONS = [
+  {type:'normal', text:'ما هو أكبر محيط في العالم؟', options:['المحيط الأطلسي','المحيط الهندي','المحيط الهادئ','المحيط المتجمد'], correct:2, mult:1},
+
+  {type:'social_prediction', text:'من الأكثر احتمالًا أن يضحك في وقت غير مناسب؟', options:[], correct:null, mult:1},
+
+  {type:'normal', text:'كم عدد أيام السنة الكبيسة؟', options:['364','365','366','367'], correct:2, mult:1},
+
+  {type:'social_knowledge', text:'ما المشروب المفضل لدى PLACEHOLDER؟ 🧠', options:['قهوة','شاي','عصير','مشروب غازي'], correct:0, mult:1},
+
+  {type:'double', text:'ما الحيوان المعروف بأنه ملك الغابة؟', options:['النمر','الأسد','الفيل','الذئب'], correct:1, mult:2},
+
+  {type:'social_prediction', text:'من الأكثر احتمالًا أن ينسى أين وضع هاتفه؟ 📱', options:[], correct:null, mult:1},
+
+  {type:'normal', text:'ما أسرع حيوان بري؟', options:['الفهد','الأسد','الحصان','الغزال'], correct:0, mult:1},
+
+  {type:'social_knowledge', text:'ما اللون المفضل لدى PLACEHOLDER؟ 🎨', options:['الأزرق','الأحمر','الأخضر','الأسود'], correct:0, mult:1},
+
+  {type:'normal', text:'كم عدد أشهر السنة؟', options:['10','11','12','13'], correct:2, mult:1},
+
+  {type:'social_prediction', text:'من الأكثر احتمالًا أن يكون آخر شخص يغادر العزيمة؟ 😂', options:[], correct:null, mult:1},
+
+  {type:'normal', text:'ما عاصمة المملكة العربية السعودية؟', options:['جدة','الرياض','مكة','الدمام'], correct:1, mult:1},
+
+  {type:'double', text:'أي كوكب يُعرف بالكوكب الأحمر؟', options:['الزهرة','المريخ','عطارد','زحل'], correct:1, mult:2},
+
+  {type:'social_prediction', text:'من الأكثر احتمالًا أن يطلب صورة جماعية؟ 📸', options:[], correct:null, mult:1},
+
+  {type:'social_knowledge', text:'ما الأكلة المفضلة لدى PLACEHOLDER؟ 🍽️', options:['بيتزا','برجر','مندي','مكرونة'], correct:2, mult:1},
+
+  {type:'normal', text:'كم عدد أضلاع المثلث؟', options:['2','3','4','5'], correct:1, mult:1},
+
+  {type:'social_prediction', text:'من الأكثر احتمالًا أن ينام أثناء مشاهدة فيلم؟ 😴', options:[], correct:null, mult:1},
+
+  {type:'normal', text:'أي دولة تشتهر ببرج إيفل؟', options:['إيطاليا','فرنسا','إسبانيا','ألمانيا'], correct:1, mult:1},
+
+  {type:'social_knowledge', text:'ما أكثر شيء يحب PLACEHOLDER فعله في وقت الفراغ؟ 🎮', options:['مشاهدة الأفلام','الألعاب','الخروج','النوم'], correct:1, mult:1},
+
+  {type:'double', text:'ما الغاز الذي يتنفسه الإنسان للبقاء على قيد الحياة؟', options:['الأكسجين','الهيدروجين','النيتروجين','ثاني أكسيد الكربون'], correct:0, mult:2},
+
+  {type:'social_prediction', text:'من الأكثر احتمالًا أن يبدأ نقاشًا طويلًا على موضوع بسيط؟ 😄', options:[], correct:null, mult:1},
+
+  {type:'normal', text:'كم عدد ألوان قوس قزح؟', options:['5','6','7','8'], correct:2, mult:1},
+
+  {type:'social_knowledge', text:'ما أكثر شيء يزعج PLACEHOLDER؟ 🤔', options:['الانتظار','الضوضاء','التأخير','الجوع'], correct:2, mult:1},
+
+  {type:'normal', text:'ما أكبر حيوان على وجه الأرض؟', options:['الفيل','الحوت الأزرق','الزرافة','الدب القطبي'], correct:1, mult:1},
+
+  {type:'social_prediction', text:'من الأكثر احتمالًا أن ينسى موعد التجمع؟ 📅', options:[], correct:null, mult:1},
+
+  {type:'normal', text:'ما اللغة الأكثر تحدثًا من حيث عدد المتحدثين الأصليين؟', options:['الإنجليزية','العربية','الصينية','الإسبانية'], correct:2, mult:1},
+
+  {type:'social_knowledge', text:'لو كان لدى PLACEHOLDER إجازة أسبوع كامل، أين يفضل أن يذهب؟ ✈️', options:['البحر','الجبل','مدينة جديدة','يبقى في المنزل'], correct:0, mult:1},
+
+  {type:'double', text:'ما عاصمة سلطنة عُمان؟ 🇴🇲', options:['صلالة','صحار','نزوى','مسقط'], correct:3, mult:2},
+
+  {type:'social_prediction', text:'من الأكثر احتمالًا أن يلتقط صورًا للطعام قبل أن يأكل؟ 📸🍔', options:[], correct:null, mult:1},
+
+  {type:'social_knowledge', text:'من أكثر شخص يتوقع PLACEHOLDER أن يفوز في هذه اللعبة؟ 🏆', options:['أحد الأصدقاء','أحد أفراد العائلة','هو نفسه','لا أحد'], correct:2, mult:1},
+
+  {type:'final', text:'من يعرف أفراد المجموعة أكثر؟ اختر الشخص الذي تتوقع أن يحصل على أعلى نتيجة! 🏆', options:[], correct:null, mult:3},
+];
+const AVATARS = ['🦁','🐼','🦊','🐨','🐯','🐸','🦄','🐵','🐺','🐰'];
+
+/* ================= STORAGE HELPERS (real backend: Firebase Realtime Database, REST) ================= */
+const FIREBASE_DB_URL_RAW = "https://fazzora-live-default-rtdb.firebaseio.com";
+const FIREBASE_DB_URL = FIREBASE_DB_URL_RAW.trim().replace(/\/+$/,''); // يزيل أي شرطة مائلة زائدة في نهاية الرابط
+const hasStorage = FIREBASE_DB_URL && !FIREBASE_DB_URL.includes('PASTE_YOUR');
+function gk(code){ return 'games/'+code; }
+
+function withTimeout(promise, ms){
+  return new Promise((resolve)=>{
+    let settled = false;
+    const timer = setTimeout(()=>{ if(!settled){ settled=true; resolve({__timeout:true}); } }, ms);
+    promise.then(v=>{ if(!settled){ settled=true; clearTimeout(timer); resolve(v); } },
+                 ()=>{ if(!settled){ settled=true; clearTimeout(timer); resolve({__timeout:true}); } });
+  });
+}
+// طلب منخفض المستوى لا يرمي استثناءً أبدًا، ويحدد مهلة زمنية (8 ثوانٍ) حتى لا يتجمد التطبيق
+// إذا توقف الطلب دون رد.
+async function fbRequest(method, path, body){
+  const url = `${FIREBASE_DB_URL}/${path}.json`;
+  try{
+    const opts = {method, cache:'no-store'};
+    if(body!==undefined){ opts.headers={'Content-Type':'application/json'}; opts.body=JSON.stringify(body); }
+    const res = await withTimeout(fetch(url, opts), 8000);
+    if(res && res.__timeout){
+      return {ok:false, status:0, data:null, raw:null, url, error:'انتهت مهلة الاتصال — الشبكة بطيئة أو لم يصل أي رد'};
+    }
+    const raw = await withTimeout(res.text(), 8000);
+    if(raw && raw.__timeout){
+      return {ok:false, status:0, data:null, raw:null, url, error:'انتهت مهلة قراءة الرد من قاعدة البيانات'};
+    }
+    let data=null;
+    try{ data = raw ? JSON.parse(raw) : null; }catch(e){ /* يبقى data فارغًا، وraw تُظهر ما وصل فعليًا */ }
+    return {ok:res.ok, status:res.status, data, raw, url, error: res.ok? null : (data && data.error ? data.error : ('HTTP '+res.status))};
+  }catch(e){
+    return {ok:false, status:0, data:null, raw:null, url, error: e.message || 'تعذّر الوصول إلى الشبكة'};
+  }
+}
+async function testFirebaseConnection(){ return await fbRequest('GET', '_healthcheck'); }
+
+/* المستند مقسّم إلى ثلاثة فروع منفصلة في Firebase:
+   core (يكتبها المضيف فقط: المرحلة، رقم السؤال، النقاط...)، وplayers (كل لاعب يكتب مفتاحه فقط)،
+   وanswers (كل لاعب يكتب مفتاحه فقط). هذا يمنع أي تصادم بين الكتابات المتزامنة، ويعتمد على PUT
+   فقط في كل مكان (الطريقة المؤكَّد عملها). flattenDoc() تدمج الثلاثة في كائن واحد ليستمر باقي
+   الكود في التعامل مع state.phase وstate.qIndex كما هو. */
+function flattenDoc(doc){
+  const core = (doc && doc.core) || {};
+  // قاعدة بيانات Firebase لا تخزّن أي كائن فارغ أبدًا -- حقل كُتب كـ {} (كالنقاط والسلاسل
+  // المتتالية عند بداية اللعبة) يعود بلا قيمة على الإطلاق وليس ككائن فارغ. لذلك تُضبط هنا
+  // كل الحقول القابلة للفراغ افتراضيًا، في المكان الوحيد الذي تُحمَّل منه الحالة بالكامل.
+  return {
+    ...core,
+    scores: core.scores || {},
+    streaks: core.streaks || {},
+    maxStreak: core.maxStreak || {},
+    correctTimes: core.correctTimes || {},
+    players: (doc && doc.players) || {},
+    answers: (doc && doc.answers) || {},
+  };
+}
+async function loadFullState(code){
+  const r = await fbRequest('GET', gk(code));
+  if(!r.ok || !r.data) return null;
+  return flattenDoc(r.data);
+}
+const CORE_EXCLUDE = ['players','answers'];
+function extractCore(flatState){
+  const core = {};
+  Object.keys(flatState).forEach(k=>{ if(!CORE_EXCLUDE.includes(k)) core[k]=flatState[k]; });
+  return core;
+}
+async function saveCore(code, flatState){
+  return await fbRequest('PUT', gk(code)+'/core', extractCore(flatState));
+}
+async function clearAnswersRemote(){ await fbRequest('PUT', gk(gameCode)+'/answers', {}); }
+
+// الأرقام العربية والهندية تبدو أرقامًا على الشاشة لكنها رموز Unicode مختلفة عن "0-9".
+// لوحة مفاتيح عربية قد تُدخلها دون أن يشعر المستخدم، فتُحوَّل هنا دائمًا إلى أرقام غربية
+// قبل استخدامها في أي مسار داخل Firebase.
+function normalizeCode(raw){
+  const map = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+               '۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+  return String(raw||'').replace(/[٠-٩۰-۹]/g, d=>map[d]).replace(/[^0-9]/g,'').trim();
+}
+
+// أي نص يدخله لاعب (أهمها الاسم) يُعرض لاحقًا على شاشات لاعبين آخرين عبر innerHTML، فيجب
+// تعقيمه دائمًا قبل الإدراج، وإلا استطاع أي شخص كتابة اسم يحتوي HTML/JS يعمل في متصفح الآخرين.
+function escapeHtml(str){
+  return String(str==null ? '' : str).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
+}
+function sanitizeName(raw, fallback){
+  const trimmed = String(raw||'').trim().slice(0,40);
+  return trimmed || fallback;
+}
+
+/* ================= LOCAL SESSION STATE ================= */
+const SESSION_KEY = 'fazzora_session_v1';
+function loadSession(){ try{ const raw = localStorage.getItem(SESSION_KEY); return raw? JSON.parse(raw) : null; }catch(e){ return null; } }
+function saveSession(){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({myId, myAvatar, gameCode})); }catch(e){} }
+function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
+
+const savedSession = loadSession();
+let myId = (savedSession && savedSession.myId) || ('p'+Math.random().toString(36).slice(2,8));
+let myName = ''; let myAvatar = (savedSession && savedSession.myAvatar) || AVATARS[Math.floor(Math.random()*AVATARS.length)];
+let gameCode = null;
+let cachedState = null;
+let localComboShownFor = -1;
+let winnerRevealIdx = null; // محلي فقط، خاص بكل جهاز
+
+function randCode(){ return String(Math.floor(100000+Math.random()*900000)); }
+
+const root = document.getElementById('screenRoot');
+function el(html){ const d=document.createElement('div'); d.className='screen'; d.innerHTML=html; return d; }
+function setScreen(node){ root.innerHTML=''; root.appendChild(node); updateGameChrome(); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
+
+/* ================= شريط أدوات دائم: الخروج من اللعبة / إنهاؤها (للمضيف) ================= */
+function updateGameChrome(){
+  const chrome = document.getElementById('gameChrome');
+  if(!chrome) return;
+  if(!gameCode || !cachedState || cachedState.phase==='ended'){ chrome.style.display='none'; return; }
+  chrome.style.display='flex';
+  const endBtn = document.getElementById('endGameBtn');
+  if(endBtn) endBtn.style.display = amHost(cachedState) ? 'inline-block' : 'none';
+}
+function wireGameChrome(){
+  const exitBtn = document.getElementById('exitBtn');
+  const endBtn = document.getElementById('endGameBtn');
+  if(exitBtn) exitBtn.onclick = ()=>{
+    if(!confirm('هل تريد الخروج من اللعبة؟ لن تعود إليها تلقائيًا بعد ذلك.')) return;
+    stopPolling();
+    clearSession();
+    gameCode=null; cachedState=null; lastRenderKey=null;
+    updateGameChrome();
+    renderHome();
+  };
+  if(endBtn) endBtn.onclick = ()=>{
+    if(!confirm('هل تريد إنهاء اللعبة لجميع اللاعبين الآن؟')) return;
+    withFreshState(s=>{ s.phase='ended'; });
+  };
+}
+
+/* ================= حدود الأخطاء (Error Boundary) =================
+   لا شيء قبل هذا السطر يجب أن يترك الشاشة فارغة إلى الأبد: أي استثناء غير متوقع، أو أي حالة
+   لعبة لا تطابق مرحلة معروفة (كجلسة قديمة غير متوافقة)، تنتهي هنا بدلًا من ألا يُرسم شيء إطلاقًا. */
+let pollIntervalId = null;
+function stopPolling(){ if(pollIntervalId){ clearInterval(pollIntervalId); pollIntervalId=null; } polling=false; }
+function renderFatalError(context, err){
+  console.error('[FAZZORA FATAL]', context, err);
+  stopPolling();
+  const detail = (err && err.message) ? err.message : String(err||'');
+  setScreen(el(`
+    <div class="center-flex">
+      <div class="setup-box" style="border-color:var(--coral);">
+        ⚠️ <b>حدث خطأ غير متوقع</b><br><br>${context}
+        <br><br><span style="font-size:9px; direction:ltr; display:block; word-break:break-all; color:var(--text-muted);">${detail}</span>
+      </div>
+      <button class="primary-btn" id="resetBtn" style="width:200px;">البدء من جديد</button>
+    </div>
+  `));
+  const btn = document.getElementById('resetBtn');
+  if(btn) btn.onclick = ()=>{ clearSession(); gameCode=null; cachedState=null; lastRenderKey=null; renderHome(); };
+}
+window.addEventListener && window.addEventListener('error', (e)=> renderFatalError('حدث خطأ برمجي غير متوقع', e.error||e.message));
+window.addEventListener && window.addEventListener('unhandledrejection', (e)=> renderFatalError('حدث خطأ غير متوقع أثناء عملية شبكة', e.reason));
+
+/* ================= شاشة عدم الإعداد / شاشة الاتصال ================= */
+function renderNoStorage(){
+  setScreen(el(`
+    <div class="center-flex">
+      <div class="setup-box">
+        ⚠️ <b>هناك خطوة إعداد واحدة مطلوبة</b><br><br>
+        أنشئ مشروع Firebase مجانيًا، وفعّل Realtime Database في وضع الاختبار، ثم ضع رابط قاعدة
+        البيانات في مكان القيمة المخصصة داخل الشيفرة. بعد ذلك يمكن فتح هذا الملف من أي متصفح.
+      </div>
+    </div>
+  `));
+}
+function renderConnError(info){
+  const reason = info && info.status===0 ? 'تعذّر الوصول إلى الشبكة — تأكد من صحة الرابط ومن وجود اتصال بالإنترنت'
+    : info && (info.status===401 || info.status===403) ? 'الصلاحيات مغلقة في إعدادات Firebase — تأكد أن قاعدة البيانات في وضع الاختبار (Test mode)'
+    : 'رد غير متوقع من قاعدة البيانات: ' + (info ? (info.error||info.status) : 'غير معروف');
+  setScreen(el(`
+    <div class="center-flex">
+      <div class="setup-box" style="border-color:var(--coral);">
+        ❌ <b>فشل الاتصال بقاعدة البيانات</b><br><br>${reason}
+      </div>
+      <button class="primary-btn" id="retryBtn" style="width:200px;">إعادة المحاولة</button>
+    </div>
+  `));
+  document.getElementById('retryBtn').onclick = boot;
+}
+
+function renderHome(){
+  const node = el(`
+    <div class="center-flex" style="gap:16px;">
+      <div class="role-card" id="hostCard"><b>🎤 إنشاء لعبة</b><span>سأكون المضيف وأنشئ لعبة جديدة</span></div>
+      <div class="role-card" id="joinCard"><b>📱 الانضمام بكود</b><span>لديّ كود من صديقي</span></div>
+    </div>
+  `);
+  node.querySelector('#hostCard').onclick = renderHostForm;
+  node.querySelector('#joinCard').onclick = renderJoinForm;
+  setScreen(node);
+}
+
+function renderHostForm(){
+  const node = el(`
+    <div class="screen-title">إنشاء لعبة</div>
+    <input class="text-input" id="nameInput" placeholder="اسمك" maxlength="14">
+    <button class="primary-btn" id="goBtn">إنشاء اللعبة</button>
+    <button class="secondary-btn" id="backBtn">رجوع</button>
+    <div class="err-msg" id="err"></div>
+  `);
+  node.querySelector('#backBtn').onclick = renderHome;
+  node.querySelector('#goBtn').onclick = async ()=>{
+    node.querySelector('#goBtn').disabled = true;
+    const r = await hostCreateGame(node.querySelector('#nameInput').value);
+    if(!r.ok){ node.querySelector('#err').textContent = r.error; node.querySelector('#goBtn').disabled = false; return; }
+    startPolling();
+  };
+  setScreen(node);
+}
+
+function renderJoinForm(){
+  const node = el(`
+    <div class="screen-title">الانضمام بكود</div>
+    <input class="text-input code-input" id="codeInput" placeholder="123456" maxlength="6" inputmode="numeric">
+    <input class="text-input" id="nameInput" placeholder="اسمك" maxlength="14">
+    <button class="primary-btn" id="goBtn">انضمام</button>
+    <button class="secondary-btn" id="backBtn">رجوع</button>
+    <div class="err-msg" id="err"></div>
+    <div id="debugBox" style="display:none; margin-top:10px; background:var(--panel); border:1px dashed var(--gold); border-radius:10px; padding:8px; font-size:9px; color:var(--text-muted); word-break:break-all; text-align:left; direction:ltr;"></div>
+  `);
+  node.querySelector('#backBtn').onclick = renderHome;
+  node.querySelector('#goBtn').onclick = async ()=>{
+    node.querySelector('#goBtn').disabled = true;
+    node.querySelector('#debugBox').style.display = 'none';
+    const r = await playerJoinGame(node.querySelector('#codeInput').value, node.querySelector('#nameInput').value);
+    if(!r.ok){
+      node.querySelector('#err').textContent = r.error;
+      node.querySelector('#goBtn').disabled = false;
+      if(r.debug){
+        const box = node.querySelector('#debugBox');
+        box.style.display = 'block';
+        box.textContent = `[تشخيص] الرابط=${r.debug.url} | الحالة=${r.debug.status} | ok=${r.debug.ok} | الرد الخام="${r.debug.raw}"`;
+      }
+      return;
+    }
+    if(r.isSpectator) showToast('اللعبة جارية بالفعل — ستدخل كمشاهد وتلعب في الجولة القادمة 🎥');
+    startPolling();
+  };
+  setScreen(node);
+}
+
+/* ================= أدوات منطق اللعبة ================= */
+function playersList(state){ return Object.values(state.players||{}); }
+function activePlayers(state){ return playersList(state).filter(p=>!p.isSpectator); }
+function findPlayer(state,id){ return state.players ? state.players[id] : undefined; }
+function sortedIds(state){ return activePlayers(state).sort((a,b)=>(state.scores[b.id]||0)-(state.scores[a.id]||0)).map(p=>p.id); }
+function rankMap(state){ const ids=sortedIds(state); const m={}; ids.forEach((id,i)=>m[id]=i+1); return m; }
+function qTime(state,i){ return state.questions[i].type==='final' ? 8 : 12; }
+function amHost(state){ return state && state.hostId===myId; }
+
+// إجابة صالحة فقط إذا كانت تخص السؤال الحالي والجولة الحالية بالضبط -- هذا يمنع أي إجابة
+// قديمة متسرّبة (من سؤال سابق أو من لعبة سابقة بعد "العب مرة أخرى") من أن تُحتسب أو تُعرض.
+function isAnswerValid(state, answer){
+  if(!answer) return false;
+  const expectedEpoch = state.roundEpoch||1;
+  return answer.qIndex===state.qIndex && (answer.roundEpoch||1)===expectedEpoch;
+}
+
+// عدالة النقاط: نعتمد على ختم زمن خادم Firebase نفسه (وليس ساعة أي جهاز) لكل من بداية
+// السؤال ووصول الإجابة، حتى لا يتأثر الاحتساب بفارق ساعة هاتف عن آخر.
+function computeTimeUsed(state, answer, T){
+  if(answer && typeof state.questionStartedAt==='number' && typeof answer.answeredAt==='number'){
+    return Math.max(0, Math.min(T, (answer.answeredAt - state.questionStartedAt)/1000));
+  }
+  return (answer && answer.timeUsed!=null) ? Math.max(0, Math.min(T, answer.timeUsed)) : T;
+}
+
+function buildQuestionsSnapshot(state){
+  const qs = QUESTIONS.map(q=>({...q}));
+  const targets = activePlayers(state);
+  // سؤال "اعرف صديقك" يُحدَّد بنوعه ووجود العلامة PLACEHOLDER في نصه، وليس برقم ترتيبه --
+  // فيمكن نقله أو حذفه أو تكراره بحرية دون كسر الاستبدال.
+  const knowIdx = qs.findIndex(q=>q.type==='social_knowledge' && q.text && q.text.includes('PLACEHOLDER'));
+  if(knowIdx>=0 && targets.length){
+    const target = targets[Math.floor(Math.random()*targets.length)];
+    qs[knowIdx] = {...qs[knowIdx], text: qs[knowIdx].text.replace('PLACEHOLDER', escapeHtml(target.name)), targetName: target.name};
+  }
+  // تُملأ خيارات سؤال "التوقع الجماعي" فورًا بأسماء اللاعبين الحقيقيين، بدل تركها فارغة
+  // (Firebase لا يخزّن أي مصفوفة فارغة، فتُفقد لاحقًا إن تُركت كذلك).
+  const predIdx = qs.findIndex(q=>q.type==='social_prediction');
+  if(predIdx>=0){
+    const names = targets.map(p=>escapeHtml(p.name)).slice(0,4);
+    qs[predIdx] = {...qs[predIdx], options: names.length ? names : ['؟','؟','؟','؟']};
+  }
+  return qs;
+}
+
+function computeReveal(state){
+  const q = state.questions[state.qIndex];
+  const ans = {};
+  Object.keys(state.answers||{}).forEach(pid=>{
+    const a = state.answers[pid];
+    if(isAnswerValid(state, a)) ans[pid] = a; // تجاهل أي إجابة لا تخص هذا السؤال/هذه الجولة بالضبط
+  });
+  const rankBefore = rankMap(state);
+  let perPlayer = {};
+  if(q.type==='social_prediction'){
+    const counts=[0,0,0,0];
+    if(!q.options || !q.options.length){ q.options = activePlayers(state).map(p=>escapeHtml(p.name)).slice(0,4); }
+    activePlayers(state).forEach(p=>{
+      const a=ans[p.id]; const c=(a&&a.choice!=null)? a.choice: null;
+      perPlayer[p.id]={choice:c};
+      if(c!==null && c<q.options.length) counts[c]++;
+    });
+    const answeredCount = Object.values(perPlayer).filter(p=>p.choice!==null).length;
+    const maxCount = Math.max(...counts);
+    const winners = counts.map((c,i)=>(c===maxCount && maxCount>0)?i:-1).filter(i=>i>=0);
+    const tie = winners.length!==1 || answeredCount<3;
+    const majority = tie? -1 : winners[0];
+    activePlayers(state).forEach(p=>{
+      const pts = (!tie && perPlayer[p.id].choice===majority) ? 1000 : 0;
+      state.scores[p.id]=(state.scores[p.id]||0)+pts;
+      perPlayer[p.id].points=pts; perPlayer[p.id].comboBonus=0;
+    });
+    state.revealData = {qIndex:state.qIndex, type:q.type, majority, tie, counts, options:q.options, perPlayer};
+  } else {
+    const correctIdx = q.correct;
+    activePlayers(state).forEach(p=>{
+      const a = ans[p.id];
+      const choice = a? a.choice : null;
+      const correct = choice===correctIdx;
+      let points=0, comboBonus=0;
+      if(correct){
+        const T = qTime(state,state.qIndex);
+        const timeUsed = computeTimeUsed(state, a, T);
+        const remFrac = Math.max(0, 1-(timeUsed/T));
+        const sBonus = Math.round(400*Math.pow(remFrac,2));
+        state.streaks[p.id] = (state.streaks[p.id]||0)+1;
+        if(state.streaks[p.id]===3) comboBonus=150; else if(state.streaks[p.id]===5) comboBonus=300;
+        state.maxStreak[p.id] = Math.max(state.maxStreak[p.id]||0, state.streaks[p.id]);
+        points = 1000*q.mult + sBonus + comboBonus;
+        state.correctTimes[p.id] = state.correctTimes[p.id]||[];
+        state.correctTimes[p.id].push(timeUsed);
+      } else {
+        state.streaks[p.id]=0;
+      }
+      state.scores[p.id]=(state.scores[p.id]||0)+points;
+      perPlayer[p.id]={choice,correct,points,comboBonus};
+    });
+    const counts=[0,0,0,0];
+    Object.values(ans).forEach(a=>{ if(a && a.choice!=null) counts[a.choice]++; });
+    state.revealData = {qIndex:state.qIndex, type:q.type, correctIdx, counts, perPlayer};
+  }
+  const rankAfter = rankMap(state);
+  Object.keys(perPlayer).forEach(pid=>{
+    state.revealData.perPlayer[pid].rankBefore = rankBefore[pid]||activePlayers(state).length;
+    state.revealData.perPlayer[pid].rankAfter = rankAfter[pid]||activePlayers(state).length;
+  });
+  state.phase = 'reveal';
+}
+
+function finalizeWinner(state, rankingIds, tied){
+  state.finalRanking = rankingIds;
+  state.tied = tied;
+  let fastest=null, fastestAvg=Infinity;
+  activePlayers(state).forEach(p=>{
+    const times = state.correctTimes[p.id]||[];
+    if(times.length){ const avg = times.reduce((a,b)=>a+b,0)/times.length; if(avg<fastestAvg){ fastestAvg=avg; fastest=p.id; } }
+  });
+  let longestCombo=null, bestStreak=-1;
+  activePlayers(state).forEach(p=>{ const m=state.maxStreak[p.id]||0; if(m>bestStreak){ bestStreak=m; longestCombo=p.id; } });
+  let bestComeback=null, bestDiff=-999;
+  if(state.preFinalRanking){
+    activePlayers(state).forEach(p=>{
+      const before = state.preFinalRanking.indexOf(p.id)+1 || activePlayers(state).length;
+      const after = rankingIds.indexOf(p.id)+1 || activePlayers(state).length;
+      const diff = before-after;
+      if(diff>bestDiff){ bestDiff=diff; bestComeback=p.id; }
+    });
+  }
+  state.badges = {fastest, longestCombo, bestComeback};
+  state.phase = 'winner';
+}
+
+function finishCalculating(state){
+  if(state.forceTieDemo){
+    const ids = sortedIds(state);
+    if(ids.length>1){ state.scores[ids[1]] = state.scores[ids[0]]; }
+    state.forceTieDemo = false;
+  }
+  const ids = sortedIds(state);
+  const tie = ids.length>1 && (state.scores[ids[0]]||0)===(state.scores[ids[1]]||0);
+  if(tie){
+    state.phase='suddenDeath';
+    state.suddenDeathPair = [ids[0], ids[1]];
+  } else {
+    finalizeWinner(state, ids, false);
+  }
+}
+
+/* ================= إنشاء لعبة والانضمام إليها ================= */
+async function hostCreateGame(nameInput){
+  const name = sanitizeName(nameInput, 'المضيف');
+  myName = name;
+  gameCode = randCode();
+  const core = {
+    code:gameCode, hostId:myId, hostPing:Date.now(), phase:'lobby',
+    questions:null, qIndex:0, questionEndsAt:0, countdownEndsAt:0, calcReadyAt:0, questionStartedAt:0,
+    scores:{}, streaks:{}, maxStreak:{}, correctTimes:{},
+    revealData:null, lbSnapshot:null, lbSnapshotForDisplay:null, preFinalRanking:null,
+    finalRanking:null, tied:false, suddenDeathPair:null, badges:null,
+    forceTieDemo:false, roundEpoch:1
+  };
+  const doc = {
+    core,
+    players:{ [myId]: {id:myId,name:myName,avatar:myAvatar,isHost:true,isSpectator:false} },
+    answers:{}
+  };
+  const writeRes = await fbRequest('PUT', gk(gameCode), doc);
+  if(!writeRes.ok) return {ok:false, error:'فشل إنشاء اللعبة: '+writeRes.error};
+  const verify = await loadFullState(gameCode);
+  if(!verify || verify.code!==gameCode){
+    return {ok:false, error:'تمت الكتابة لكن تعذّر التأكد منها — حاول مرة أخرى'};
+  }
+  cachedState = verify;
+  saveSession();
+  return {ok:true, code:gameCode};
+}
+
+async function playerJoinGame(codeInput, nameInput){
+  const code = normalizeCode(codeInput);
+  const name = sanitizeName(nameInput, 'لاعب');
+  if(!code) return {ok:false, error:'اكتب الكود (أرقام فقط)'};
+  const rawLookup = await fbRequest('GET', gk(code));
+  if(!rawLookup.ok) return {ok:false, error:'فشل الاتصال بقاعدة البيانات: '+rawLookup.error+' — المشكلة ليست في الكود', debug:rawLookup};
+  if(!rawLookup.data || !rawLookup.data.core) return {ok:false, error:'الاتصال سليم، لكن لا توجد لعبة مسجَّلة بهذا الكود — تأكد أن المضيف يستخدم نفس رابط قاعدة البيانات', debug:rawLookup};
+  const lookup = flattenDoc(rawLookup.data);
+  myName = name;
+  const existingPlayers = lookup.players || {};
+  const usedAvatars = Object.values(existingPlayers).map(p=>p.avatar);
+  myAvatar = AVATARS.find(a=>!usedAvatars.includes(a)) || AVATARS[Math.floor(Math.random()*AVATARS.length)];
+  const isSpectator = lookup.phase!=='lobby';
+  const myPlayerObj = {id:myId,name:myName,avatar:myAvatar,isHost:false,isSpectator};
+  const writeRes = await fbRequest('PUT', gk(code)+'/players/'+myId, myPlayerObj);
+  if(!writeRes.ok) return {ok:false, error:'فشل الانضمام: '+writeRes.error, debug:writeRes};
+  const verify = await fbRequest('GET', gk(code)+'/players/'+myId);
+  if(!verify.ok || !verify.data || verify.data.id!==myId){
+    return {ok:false, error:'لم يتم التأكد من الانضمام — حاول مرة أخرى', debug:verify};
+  }
+  cachedState = lookup;
+  cachedState.players = existingPlayers;
+  cachedState.players[myId] = myPlayerObj;
+  gameCode = code;
+  saveSession();
+  return {ok:true, isSpectator};
+}
+
+/* ================= محرك المضيف (Host Engine) — كل انتقال محسوب من الوقت الحقيقي ================= */
+function logTransition(tag, before, after){
+  console.log(`[FAZZORA ${tag}] phase ${before.phase}->${after.phase} | qIndex ${before.qIndex}->${after.qIndex} | questionEndsAt=${after.questionEndsAt} | hostId=${after.hostId} | myId=${myId}`);
+}
+function hostDrive(state){
+  const now = Date.now();
+  if(state.phase==='question' && (!Array.isArray(state.questions) || !Number.isInteger(state.qIndex) || state.qIndex<0 || state.qIndex>=state.questions.length)){
+    console.warn('[FAZZORA] qIndex أو questions غير صالحة، تخطي هذه الدورة'); return false; // بيانات غير سليمة (كتابة تالفة/خبيثة مباشرة على Firebase) -- لا نحاول التعامل معها هذه الدورة
+  }
+  if(state.phase==='countdown' && now>=state.countdownEndsAt){
+    const before = {phase:state.phase, qIndex:state.qIndex};
+    state.phase='question'; state.qIndex=0; state.answers={};
+    state.questionEndsAt = now + qTime(state,0)*1000;
+    state.questionStartedAt = {'.sv':'timestamp'};
+    logTransition('COUNTDOWN->QUESTION', before, state);
+    return true;
+  }
+  if(state.phase==='question' && now>=state.questionEndsAt){
+    const before = {phase:state.phase, qIndex:state.qIndex};
+    computeReveal(state);
+    logTransition('QUESTION->REVEAL', before, state);
+    return true;
+  }
+  if(state.phase==='calculating' && now>=state.calcReadyAt){
+    const before = {phase:state.phase, qIndex:state.qIndex};
+    finishCalculating(state);
+    logTransition('CALCULATING->'+state.phase.toUpperCase(), before, state);
+    return true;
+  }
+  return false;
+}
+
+/* core منفصل تمامًا عن players وanswers في Firebase، فكتابته هنا لا تصطدم أبدًا بلاعب
+   ينضم أو يجيب في اللحظة نفسها. وكل قراءة/كتابة لـcore (من tick() التلقائي أو من ضغطة
+   زر) تمر عبر serialize() أدناه، التي تُنفّذها واحدة تلو الأخرى على هذا الجهاز بالضبط --
+   هذا ما يمنع تصادم استجابة polling مع ضغطة المستخدم على "التالي" في اللحظة نفسها. */
+let coreOpChain = Promise.resolve();
+function serialize(fn){
+  const result = coreOpChain.then(fn, fn);
+  coreOpChain = result.then(()=>{}, ()=>{}); // لا تكسر السلسلة حتى مع حدوث خطأ
+  return result;
+}
+
+function withFreshState(fn, opts){
+  opts = opts || {};
+  return serialize(async ()=>{
+    const s = await loadFullState(gameCode); if(!s) return;
+    const prevPhase = s.phase, prevQIndex = s.qIndex;
+    fn(s);
+    s.hostPing = Date.now();
+    const res = await saveCore(gameCode, s);
+    if(!res.ok){ console.log('[FAZZORA] فشلت كتابة الحالة:', res.error); return; }
+    if(opts.includePlayers){
+      await fbRequest('PUT', gk(gameCode)+'/players', s.players);
+    }
+    if(s.phase==='question' && (s.phase!==prevPhase || s.qIndex!==prevQIndex)){
+      await clearAnswersRemote();
+    }
+    cachedState = s;
+    renderCurrent();
+  });
+}
+function hostStartGame(){
+  return withFreshState(s=>{
+    s.questions = buildQuestionsSnapshot(s);
+    s.phase='countdown'; s.countdownEndsAt = Date.now()+2600;
+  });
+}
+// آخر سؤال فعليًا هو السؤال من نوع "final" (بصرف النظر عن عدد الأسئلة الكلي)،
+// وإن لم يوجد سؤال من هذا النوع يُعتبر آخر عنصر في المصفوفة هو الأخير.
+function finalQuestionIndex(state){
+  const idx = state.questions.findIndex(q=>q.type==='final');
+  return idx>=0 ? idx : state.questions.length-1;
+}
+function hostAdvanceFromReveal(){
+  return withFreshState(s=>{
+    const lastIdx = finalQuestionIndex(s);
+    if(s.qIndex===lastIdx){
+      // انتهى السؤال الأخير فعليًا -- احسب النتيجة
+      s.phase='calculating'; s.calcReadyAt=Date.now()+1700;
+    } else if(s.qIndex===lastIdx-1){
+      // انتهى آخر سؤال قبل الجولة الأخيرة مباشرة -- اعرض مقدمة الجولة الأخيرة
+      s.preFinalRanking = sortedIds(s);
+      s.phase='finalIntro';
+    } else if((s.qIndex+1)%3===0){
+      // كل 3 أسئلة يظهر الترتيب، بصرف النظر عن العدد الكلي للأسئلة
+      s.lbSnapshotForDisplay = s.lbSnapshot;
+      s.lbSnapshot = rankMap(s);
+      s.phase='leaderboard';
+    } else {
+      s.qIndex+=1; s.phase='question'; s.answers={};
+      s.questionEndsAt = Date.now()+qTime(s,s.qIndex)*1000;
+      s.questionStartedAt = {'.sv':'timestamp'};
+    }
+  });
+}
+function hostAdvanceFromLeaderboard(){
+  return withFreshState(s=>{
+    s.qIndex+=1; s.phase='question'; s.answers={};
+    s.questionEndsAt = Date.now()+qTime(s,s.qIndex)*1000;
+    s.questionStartedAt = {'.sv':'timestamp'};
+  });
+}
+function hostStartFinalQuestion(){
+  return withFreshState(s=>{
+    s.qIndex = finalQuestionIndex(s);
+    s.phase='question'; s.answers={};
+    s.questionEndsAt = Date.now()+8000;
+    s.questionStartedAt = {'.sv':'timestamp'};
+  });
+}
+function hostResolveSuddenDeath(){
+  return withFreshState(s=>{
+    const [id1,id2] = s.suddenDeathPair;
+    const stayTied = Math.random()<0.2;
+    if(stayTied){ finalizeWinner(s, sortedIds(s), true); }
+    else{
+      if(Math.random()<0.5) s.scores[id1]=(s.scores[id1]||0)+1; else s.scores[id2]=(s.scores[id2]||0)+1;
+      finalizeWinner(s, sortedIds(s), false);
+    }
+  });
+}
+// «العب مرة أخرى»: تبقى نفس اللعبة ونفس الكود، وتُصفَّر النتائج فقط.
+function hostPlayAgain(){
+  return withFreshState(s=>{
+    Object.values(s.players).forEach(p=>p.isSpectator=false);
+    s.scores={}; s.streaks={}; s.maxStreak={}; s.correctTimes={}; s.answers={};
+    s.lbSnapshot=null; s.lbSnapshotForDisplay=null; s.preFinalRanking=null;
+    s.finalRanking=null; s.tied=false; s.suddenDeathPair=null; s.badges=null;
+    s.questions=null; s.roundEpoch=(s.roundEpoch||1)+1; s.phase='lobby';
+  }, {includePlayers:true});
+}
+// «إنشاء لعبة جديدة»: تُنهى اللعبة الحالية لكل اللاعبين، ويبدأ المضيف لعبة جديدة تمامًا بكود مختلف.
+async function hostCreateNewGame(){
+  await withFreshState(s=>{ s.phase='ended'; });
+  stopPolling();
+  const previousName = myName;
+  gameCode = null; cachedState = null; lastRenderKey = null;
+  const r = await hostCreateGame(previousName);
+  if(r.ok){ startPolling(); } else { renderHome(); }
+}
+
+/* ================= إجراءات اللاعب ================= */
+// تُكتب الإجابة على مسار خاص باللاعب فقط (games/{code}/answers/{myId})، فلا يمكن لإجابتَي
+// لاعبين في اللحظة نفسها أن تتصادما أبدًا. كل إجابة تحمل رقم السؤال والجولة الحاليَّين
+// حتى لا تُحتسب أبدًا لسؤال آخر.
+async function submitAnswer(choiceIdx){
+  if(!cachedState || cachedState.phase!=='question') return;
+  const q = cachedState.questions && cachedState.questions[cachedState.qIndex];
+  if(!q) return;
+  const optCount = q.type==='social_prediction' ? activePlayers(cachedState).length : (q.options?q.options.length:4);
+  choiceIdx = Number(choiceIdx);
+  if(!Number.isInteger(choiceIdx) || choiceIdx<0 || choiceIdx>=Math.max(optCount,1)) return; // رفض أي قيمة غير صالحة قبل كتابتها
+  const mine = cachedState.answers && cachedState.answers[myId];
+  if(mine && isAnswerValid(cachedState, mine) && mine.locked) return; // لا يمكن التغيير بعد التثبيت
+  const T = qTime(cachedState, cachedState.qIndex);
+  const remaining = Math.max(0,(cachedState.questionEndsAt-Date.now())/1000);
+  const timeUsed = Math.max(0, T-remaining); // احتياطي فقط للعرض الفوري المحلي
+  const qIndex = cachedState.qIndex, roundEpoch = cachedState.roundEpoch||1;
+  const localPreview = {choice:choiceIdx, timeUsed, qIndex, roundEpoch, locked:false};
+  cachedState.answers = cachedState.answers || {};
+  cachedState.answers[myId] = localPreview; // استجابة بصرية فورية
+  renderCurrent();
+  // الكتابة الفعلية تتضمن ختم زمن خادم Firebase وليس ساعة الجهاز -- هذا ما يجعل احتساب
+  // نقاط السرعة عادلًا مهما اختلفت ساعات الهواتف.
+  const answerObj = {choice:choiceIdx, timeUsed, answeredAt:{'.sv':'timestamp'}, qIndex, roundEpoch, locked:false};
+  await fbRequest('PUT', gk(gameCode)+'/answers/'+myId, answerObj);
+}
+// تثبيت الإجابة: يُخزَّن العلم locked مع الإجابة نفسها في Firebase، وليس مجرد تعطيل مرئي
+// للزر -- أي محاولة لاحقة لتغيير الإجابة تُرفض برمجيًا سواء محليًا أو عند الكتابة.
+async function lockAnswer(){
+  if(!cachedState || cachedState.phase!=='question') return;
+  const mine = cachedState.answers && cachedState.answers[myId];
+  if(!mine || !isAnswerValid(cachedState, mine) || mine.choice==null) return;
+  if(mine.locked) return;
+  const locked = {...mine, locked:true};
+  cachedState.answers[myId] = locked;
+  renderCurrent();
+  await fbRequest('PUT', gk(gameCode)+'/answers/'+myId, locked);
+}
+
+/* ================= الاستطلاع الدوري (Polling) ================= */
+let polling=false;
+let tickInFlight=false;
+function startPolling(){
+  if(polling) return; polling=true;
+  lastRenderKey = null;
+  document.getElementById('connStatus').textContent='مباشر ✅';
+  document.getElementById('connStatus').classList.add('live');
+  tick();
+  pollIntervalId = setInterval(tick, 900);
+}
+async function tick(){
+  if(!gameCode) return;
+  if(tickInFlight) return; // لا يُسمح لطلبين متزامنين بالتداخل على هذا الجهاز
+  tickInFlight = true;
+  try{
+    let s = await loadFullState(gameCode);
+    if(!s) return;
+    const me = findPlayer(s, myId);
+
+    // تولّي دور المضيف تلقائيًا: إذا صمت المضيف الحالي أكثر من 8 ثوانٍ أثناء لعبة نشطة،
+    // يتولى أي لاعب متصل (وليس مشاهدًا) الدور بدلًا منه فتستمر اللعبة دون توقف.
+    if(s.phase!=='lobby' && s.phase!=='winner' && s.phase!=='ended' && (Date.now()-(s.hostPing||0) > 8000) && s.hostId!==myId && me && !me.isSpectator){
+      await serialize(async ()=>{
+        const fresh = await loadFullState(gameCode); if(!fresh) return;
+        if(Date.now()-(fresh.hostPing||0) <= 8000) return; // تولّاها أحد غيرنا بالفعل
+        fresh.hostId = myId; fresh.hostPing = Date.now();
+        await saveCore(gameCode, fresh);
+        s = fresh;
+      });
+    }
+
+    if(amHost(s)){
+      await serialize(async ()=>{
+        const fresh = await loadFullState(gameCode); if(!fresh) return;
+        if(fresh.hostId!==myId){ s = fresh; return; }
+        const changed = hostDrive(fresh);
+        if(changed){
+          const res = await saveCore(gameCode, fresh);
+          if(!res.ok){ console.log('[FAZZORA] فشلت كتابة الانتقال:', res.error); return; }
+          if(fresh.phase==='question'){ await clearAnswersRemote(); }
+        } else {
+          fresh.hostPing = Date.now();
+          await saveCore(gameCode, fresh);
+        }
+        s = fresh;
+      });
+    }
+
+    if(s.phase!=='winner') winnerRevealIdx = null;
+    cachedState = s;
+    renderCurrent();
+  } finally {
+    tickInFlight = false;
+  }
+}
+
+/* ================= الرسم (إعادة بناء الشاشة فقط عند تغيّر المرحلة فعليًا) ================= */
+let lastRenderKey = null;
+const VALID_PHASES = ['lobby','countdown','question','reveal','leaderboard','finalIntro','calculating','suddenDeath','winner','ended'];
+
+function renderCurrent(){
+  if(!cachedState) return;
+  const s = cachedState;
+  try{
+    if(!VALID_PHASES.includes(s.phase)){
+      console.warn('[FAZZORA] مرحلة غير معروفة، العودة للصفحة الرئيسية:', s.phase);
+      stopPolling();
+      clearSession(); gameCode=null; cachedState=null; lastRenderKey=null;
+      renderHome();
+      return;
+    }
+    renderCurrentInner(s);
+  }catch(err){
+    renderFatalError('حدث خطأ أثناء عرض الشاشة الحالية', err);
+  }
+}
+
+function renderCurrentInner(s){
+  if(s.phase==='question'){
+    const key = 'question:'+s.qIndex+':'+(s.roundEpoch||1);
+    if(lastRenderKey!==key){ renderQuestion(s); lastRenderKey=key; }
+    else { updateQuestionDynamic(s); }
+    return;
+  }
+  if(s.phase==='countdown'){
+    renderCountdown(s);
+    lastRenderKey='countdown';
+    return;
+  }
+  if(s.phase==='lobby'){
+    const key = 'lobby:'+playersList(s).map(p=>p.id+(p.isSpectator?'s':'')).sort().join(',');
+    if(lastRenderKey!==key){ renderLobby(s); lastRenderKey=key; }
+    return;
+  }
+
+  const staticKey = s.phase+':'+(s.revealData? s.revealData.qIndex : (s.qIndex!==undefined?s.qIndex:''));
+  if(lastRenderKey!==staticKey){
+    if(s.phase==='reveal') renderReveal(s);
+    else if(s.phase==='leaderboard') renderLeaderboard(s);
+    else if(s.phase==='finalIntro') renderFinalIntro(s);
+    else if(s.phase==='calculating') renderCalculating();
+    else if(s.phase==='suddenDeath') renderSuddenDeath(s);
+    else if(s.phase==='winner') renderWinner(s);
+    else if(s.phase==='ended') renderEnded();
+    lastRenderKey = staticKey;
+  }
+}
+
+function updateQuestionDynamic(s){
+  const T = qTime(s, s.qIndex);
+  const remaining = Math.max(0, Math.ceil((s.questionEndsAt-Date.now())/1000));
+  const CIRC = 107;
+  const off = CIRC*(1-remaining/T);
+  const ring = document.getElementById('qTimerRing');
+  const num = document.getElementById('qTimerNum');
+  if(ring) ring.setAttribute('stroke-dashoffset', off);
+  if(num) num.textContent = remaining;
+  const answeredCount = Object.values(s.answers||{}).filter(a=>isAnswerValid(s,a)).length;
+  const totalActive = activePlayers(s).length;
+  const ac = document.getElementById('answeredCount');
+  if(ac) ac.textContent = `${answeredCount} من ${totalActive} أجابوا`;
+  const myAnswer = s.answers && s.answers[myId];
+  const valid = myAnswer && isAnswerValid(s, myAnswer);
+  const myChoice = valid ? myAnswer.choice : null;
+  const myLocked = valid ? !!myAnswer.locked : false;
+  const lockBtn = document.getElementById('lockBtn');
+  if(lockBtn) lockBtn.disabled = (myChoice===null || myLocked);
+}
+
+function renderLobby(s){
+  const ready = activePlayers(s);
+  const specs = playersList(s).filter(p=>p.isSpectator);
+  const node = el(`
+    <div class="game-name">غرفة اللعب 🎉</div>
+    <div class="code-box" dir="ltr">${s.code.split('').map(d=>`<div class="digit">${d}</div>`).join('')}</div>
+    <div class="code-hint">شارك هذا الكود مع من تريد دعوتهم</div>
+    <div class="ready-count">${ready.length} لاعبين جاهزين</div>
+    <div class="players">
+      ${ready.map(p=>`<div class="player-row"><div class="avatar">${p.avatar}</div><div class="player-name">${escapeHtml(p.name)}</div><div class="${p.isHost?'host-tag':'joined-tag'}">${p.isHost?'المضيف 🎤':'جاهز'}</div></div>`).join('')}
+      ${specs.map(p=>`<div class="player-row spec-row"><div class="avatar">${p.avatar}</div><div class="player-name">${escapeHtml(p.name)}</div><div class="spec-tag">مشاهد — سيلعب في الجولة القادمة</div></div>`).join('')}
+    </div>
+    ${amHost(s)
+      ? `<button class="primary-btn" id="startBtn" ${ready.length<2?'disabled':''}>${ready.length<2?'يلزم لاعب واحد آخر على الأقل':'ابدأ اللعبة'}</button>
+         <label style="font-size:10px; color:var(--text-muted); display:flex; gap:6px; align-items:center; justify-content:center; margin-top:8px;"><input type="checkbox" id="tieChk" ${s.forceTieDemo?'checked':''}> محاكاة: اجعل النهاية تعادلًا</label>`
+      : `<div class="waiting-note">📱 بانتظار أن يبدأ المضيف اللعبة...</div>`}
+  `);
+  if(amHost(s)){
+    const btn = node.querySelector('#startBtn');
+    if(btn && ready.length>=2) btn.onclick = hostStartGame;
+    node.querySelector('#tieChk').onchange = (e)=>{ withFreshState(fs=>{ fs.forceTieDemo=e.target.checked; }); };
+  }
+  setScreen(node);
+}
+
+function renderCountdown(s){
+  const remaining = s.countdownEndsAt - Date.now();
+  const steps = ['3','2','1','ابدأ!'];
+  let idx = Math.floor((2600-Math.max(0,remaining))/650);
+  idx = Math.max(0, Math.min(3, idx));
+  setScreen(el(`<div class="cd-wrap" style="flex:1;display:flex;align-items:center;justify-content:center;"><div class="cd-num" style="font-family:'Baloo Bhaijaan 2';font-weight:800;font-size:70px;color:var(--gold);">${steps[idx]}</div></div>`));
+}
+
+function renderQuestion(s){
+  const q = s.questions[s.qIndex];
+  const T = qTime(s, s.qIndex);
+  const remaining = Math.max(0, Math.ceil((s.questionEndsAt-Date.now())/1000));
+  const me = findPlayer(s, myId);
+  const CIRC = 107;
+  const off = CIRC*(1-remaining/T);
+
+  let badgeHtml = '<div></div>';
+  if(q.type==='double') badgeHtml=`<div class="q-badge double">مضاعفة ×2</div>`;
+  else if(q.type==='final') badgeHtml=`<div class="q-badge final">السؤال الأخير ×3 ⚡</div>`;
+  else if(q.type==='social_prediction') badgeHtml=`<div class="q-badge social">🗳️ توقّع جماعي</div>`;
+  else if(q.type==='social_knowledge') badgeHtml=`<div class="q-badge social">🧠 اعرف صديقك</div>`;
+
+  const answeredCount = Object.values(s.answers||{}).filter(a=>isAnswerValid(s,a)).length;
+  const totalActive = activePlayers(s).length;
+  const myAnswer = s.answers && s.answers[myId];
+  const valid = myAnswer && isAnswerValid(s, myAnswer);
+  const myChoice = valid ? myAnswer.choice : null;
+  const myLocked = valid ? !!myAnswer.locked : false;
+
+  let optsList = q.type==='social_prediction' ? activePlayers(s).map(p=>escapeHtml(p.name)) : q.options;
+
+  let bodyHtml;
+  if(me && me.isSpectator){
+    bodyHtml = `<div class="spectator-note">🎥 أنت تشاهد الآن<br>ستلعب ابتداءً من الجولة القادمة</div>`;
+  } else {
+    bodyHtml = `
+      <div class="options" id="optsWrap">
+        ${optsList.map((o,i)=>`<div class="opt ${myChoice===i?'selected':''} ${myChoice===i&&myLocked?'locked':''} ${myLocked?'disabled':''}" data-i="${i}">${o}</div>`).join('')}
+      </div>
+      <div class="answered-count" id="answeredCount">${answeredCount} من ${totalActive} أجابوا</div>
+      ${myLocked
+        ? `<div class="lock-note">✅ تم تثبيت إجابتك</div>`
+        : `<button class="lock-btn" id="lockBtn" ${myChoice===null?'disabled':''}>تثبيت الإجابة 🔒</button>`}
+    `;
+  }
+
+  const node = el(`
+    <div class="q-topbar">
+      ${badgeHtml}
+      <div class="timer-ring"><svg width="42" height="42"><circle cx="21" cy="21" r="17" stroke="#3A2A63" stroke-width="4" fill="none"/>
+        <circle id="qTimerRing" cx="21" cy="21" r="17" stroke="#FFC145" stroke-width="4" fill="none" stroke-dasharray="${CIRC}" stroke-dashoffset="${off}" stroke-linecap="round"/></svg>
+        <div class="timer-num" id="qTimerNum">${remaining}</div></div>
+    </div>
+    <div class="q-text">${q.text}</div>
+    ${bodyHtml}
+  `);
+
+  if(!(me && me.isSpectator) && !myLocked){
+    node.querySelectorAll('.opt').forEach(o=>{
+      o.onclick = ()=>{
+        if(remaining<=0) return;
+        // استجابة بصرية فورية ومستقلة عن أي إعادة رسم لاحقة -- لا تنتظر رد الشبكة.
+        node.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected'));
+        o.classList.add('selected');
+        const lb = node.querySelector('#lockBtn');
+        if(lb) lb.disabled = false;
+        submitAnswer(parseInt(o.dataset.i));
+      };
+    });
+    const lockBtn = node.querySelector('#lockBtn');
+    if(lockBtn) lockBtn.onclick = ()=>{
+      if(lockBtn.disabled) return;
+      node.querySelectorAll('.opt').forEach(o=>{ o.classList.add('disabled'); if(o.classList.contains('selected')) o.classList.add('locked'); });
+      lockAnswer();
+    };
+  }
+  setScreen(node);
+}
+
+function renderReveal(s){
+  const r = s.revealData; const q = s.questions[r.qIndex];
+  const total = activePlayers(s).length;
+  const isSocialPred = r.type==='social_prediction';
+  const optsList = isSocialPred ? r.options : q.options;
+  const counts = r.counts;
+
+  let barsHtml = optsList.map((o,i)=>{
+    const c = counts[i]||0; const pct = total? Math.round(c/total*100):0;
+    let cls='';
+    if(isSocialPred) cls = (!r.tie && i===r.majority) ? 'majority' : '';
+    else cls = (i===r.correctIdx) ? 'correct' : '';
+    return `<div class="bar-row"><div class="bar-label"><span>${o}</span><span>${pct}%</span></div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+
+  let headline = isSocialPred
+    ? (r.tie ? 'انقسمت الآراء! لا نقاط في هذا السؤال 😄' : `🗳️ اختارت الأغلبية: ${r.options[r.majority]}`)
+    : `الإجابة الصحيحة: ${q.options[r.correctIdx]}`;
+
+  const myR = r.perPlayer[myId];
+  let resultHtml;
+  if(!myR){
+    resultHtml = `<div class="result-box"><div class="result-points zero">كنت تشاهد فقط 🎥</div></div>`;
+  } else {
+    const delta = myR.rankAfter - myR.rankBefore;
+    let deltaHtml = delta<0? `<div class="result-delta up">▲ تقدّمت ${Math.abs(delta)} مركزًا</div>`
+      : delta>0? `<div class="result-delta down">▼ تراجعت ${delta} مركزًا</div>`
+      : `<div class="result-delta same">═ نفس مركزك</div>`;
+    resultHtml = `<div class="result-box"><div class="result-points ${myR.points?'':'zero'}">${myR.points>0?'+'+myR.points:'0'} نقطة</div>${deltaHtml}</div>`;
+  }
+
+  const node = el(`
+    <div class="reveal-q">${headline}</div>
+    ${barsHtml}
+    ${resultHtml}
+    ${amHost(s) ? `<button class="primary-btn" id="nextBtn">${q.type==='final'?'احسب النتيجة النهائية 🏆':'التالي ▶'}</button>` : `<div class="waiting-note">📱 بانتظار المضيف...</div>`}
+  `);
+
+  if(myR && myR.comboBonus>0 && localComboShownFor!==r.qIndex){
+    localComboShownFor = r.qIndex;
+    const overlay = document.createElement('div');
+    overlay.className='combo-overlay';
+    overlay.textContent = myR.comboBonus>=300 ? 'سلسلة لا تُقهر 🔥🔥' : 'ثلاث إجابات متتالية 🔥';
+    node.appendChild(overlay);
+    setTimeout(()=>overlay.remove(), 1400);
+  }
+  if(amHost(s)) node.querySelector('#nextBtn').onclick = hostAdvanceFromReveal;
+  setScreen(node);
+}
+
+function renderLeaderboard(s){
+  const ids = sortedIds(s);
+  const prev = s.lbSnapshotForDisplay;
+  let rowsHtml = ids.map((id,i)=>{
+    const p = findPlayer(s,id);
+    let deltaHtml = `<span class="lb-delta same">═</span>`;
+    if(prev && prev[id]){
+      const diff = prev[id]-(i+1);
+      if(diff>0) deltaHtml = `<span class="lb-delta up">▲${diff}</span>`;
+      else if(diff<0) deltaHtml = `<span class="lb-delta down">▼${Math.abs(diff)}</span>`;
+    }
+    return `<div class="lb-row ${i===0?'gold':''}"><span class="lb-rank">${i+1}</span><div class="avatar">${p.avatar}</div><span class="lb-name">${escapeHtml(p.name)}</span><span class="lb-score">${s.scores[id]||0}</span>${deltaHtml}</div>`;
+  }).join('');
+  const node = el(`<div class="screen-title">الترتيب الحالي</div>${rowsHtml}
+    ${amHost(s) ? `<button class="primary-btn" id="nextBtn" style="margin-top:auto">التالي ▶</button>` : `<div class="waiting-note" style="margin-top:auto">📱 بانتظار المضيف...</div>`}`);
+  if(amHost(s)) node.querySelector('#nextBtn').onclick = hostAdvanceFromLeaderboard;
+  setScreen(node);
+}
+
+function renderFinalIntro(s){
+  const leaderId = sortedIds(s)[0];
+  const myScore = s.scores[myId]||0;
+  const gap = (s.scores[leaderId]||0) - myScore;
+  const msg = (leaderId===myId) ? 'أنت في الصدارة! لكن السؤال الأخير بمضاعفة ×3 — لا أحد مطمئن بعد 😏' : `أنت متأخر بفارق ${gap} نقطة — السؤال القادم ×3 وقد يقلب كل شيء 🔥`;
+  const node = el(`
+    <div class="center-flex"><div class="final-flash">⚡ الجولة الأخيرة</div>
+    <div style="font-size:13px; color:var(--text-muted); max-width:260px;">${msg}</div></div>
+    ${amHost(s) ? `<button class="primary-btn" id="goBtn">ابدأ السؤال الأخير ⚡</button>` : `<div class="waiting-note">📱 بانتظار المضيف...</div>`}
+  `);
+  if(amHost(s)) node.querySelector('#goBtn').onclick = hostStartFinalQuestion;
+  setScreen(node);
+}
+
+function renderCalculating(){
+  setScreen(el(`<div class="center-flex"><div class="final-flash">جارٍ حساب النتائج</div><div class="calc-dots" style="font-size:26px; color:var(--gold);"><span>.</span><span>.</span><span>.</span></div></div>`));
+}
+
+function renderSuddenDeath(s){
+  const p1=findPlayer(s,s.suddenDeathPair[0]), p2=findPlayer(s,s.suddenDeathPair[1]);
+  const node = el(`
+    <div class="center-flex">
+      <div class="final-flash">تعادل! 🔥</div>
+      <div style="font-size:14px;">بين <b>${escapeHtml(p1.name)}</b> و <b>${escapeHtml(p2.name)}</b></div>
+      <div style="font-size:11px; color:var(--text-muted);">جولة فاصلة — مع مهلة إضافية لتفاوت سرعة الاتصال</div>
+    </div>
+    ${amHost(s) ? `<button class="primary-btn" id="resolveBtn">🎲 حسم التعادل</button>` : `<div class="waiting-note">⏳ المضيف يحسم التعادل الآن...</div>`}
+  `);
+  if(amHost(s)) node.querySelector('#resolveBtn').onclick = hostResolveSuddenDeath;
+  setScreen(node);
+}
+
+function renderWinner(s){
+  if(winnerRevealIdx===null) winnerRevealIdx = s.finalRanking.length-1;
+  if(winnerRevealIdx>0){
+    const id = s.finalRanking[winnerRevealIdx]; const p=findPlayer(s,id);
+    const node = el(`
+      <div class="center-flex">
+        <div class="rankcard"><div class="rk-num">المركز ${winnerRevealIdx+1}</div>
+        <div class="avatar" style="width:44px;height:44px;font-size:22px;margin:8px auto;">${p.avatar}</div>
+        <div class="rk-name">${escapeHtml(p.name)}</div><div class="rk-score">${s.scores[id]||0} نقطة</div></div>
+      </div>
+      <button class="primary-btn" id="nextRankBtn">التالي ▶</button>
+    `);
+    node.querySelector('#nextRankBtn').onclick = ()=>{ winnerRevealIdx--; renderWinner(s); };
+    setScreen(node);
+    return;
+  }
+  const ranking = s.finalRanking.map(id=>findPlayer(s,id));
+  const winnerHtml = s.tied
+    ? `<div class="trophy">🏆🏆</div><div class="win-name">فوز مشترك!</div><div class="win-sub">${escapeHtml(ranking[0].name)} و ${escapeHtml(ranking[1].name)} — ${s.scores[ranking[0].id]} نقطة</div>`
+    : `<div class="trophy">🏆</div><div class="win-name">${escapeHtml(ranking[0].name)} فاز!</div><div class="win-sub">المجموع ${s.scores[ranking[0].id]} نقطة</div>`;
+  const fastest = s.badges.fastest? findPlayer(s,s.badges.fastest) : null;
+  const combo = s.badges.longestCombo? findPlayer(s,s.badges.longestCombo) : null;
+  const comeback = s.badges.bestComeback? findPlayer(s,s.badges.bestComeback) : null;
+
+  const node = el(`
+    <div class="win-wrap">
+      <div class="confetti" id="confetti"></div>
+      ${winnerHtml}
+      <div class="badges">
+        <div class="badge">⚡<b>${fastest?escapeHtml(fastest.name):'—'}</b>الأسرع</div>
+        <div class="badge">🔥<b>${combo?escapeHtml(combo.name):'—'}</b>أطول سلسلة</div>
+        <div class="badge">📈<b>${comeback?escapeHtml(comeback.name):'—'}</b>أفضل عودة</div>
+      </div>
+      ${amHost(s) ? `
+        <button class="primary-btn" id="againBtn" style="width:220px;">العب مرة أخرى</button>
+        <button class="secondary-btn" id="newBtn" style="width:220px;">إنشاء لعبة جديدة</button>
+      ` : `<div class="waiting-note">📱 بانتظار أن يقرر المضيف الخطوة التالية...</div>`}
+    </div>
+  `);
+  if(amHost(s)){
+    node.querySelector('#againBtn').onclick = ()=>{ winnerRevealIdx=null; hostPlayAgain(); };
+    node.querySelector('#newBtn').onclick = ()=>{ winnerRevealIdx=null; hostCreateNewGame(); };
+  }
+  setScreen(node);
+  const colors = ['#FF4D6D','#FFC145','#3DDC97','#B49BFF'];
+  const box = document.getElementById('confetti');
+  for(let i=0;i<40;i++){
+    const c=document.createElement('i');
+    c.style.left=Math.random()*100+'%'; c.style.background=colors[i%colors.length];
+    c.style.animationDelay=(Math.random()*0.6)+'s'; c.style.transform='rotate('+(Math.random()*360)+'deg)';
+    box.appendChild(c);
+  }
+}
+
+function renderEnded(){
+  const node = el(`
+    <div class="center-flex">
+      <div class="final-flash">انتهت اللعبة</div>
+      <div style="font-size:12px; color:var(--text-muted);">أنهى المضيف هذه الجلسة.</div>
+      <button class="primary-btn" id="homeBtn" style="width:220px;">العودة إلى الصفحة الرئيسية</button>
+    </div>
+  `);
+  node.querySelector('#homeBtn').onclick = ()=>{
+    stopPolling(); clearSession(); gameCode=null; cachedState=null; lastRenderKey=null; renderHome();
+  };
+  setScreen(node);
+}
+
+/* ================= بدء التشغيل ================= */
+async function boot(){
+  wireGameChrome();
+  if(!hasStorage){ renderNoStorage(); return; }
+  document.getElementById('connStatus').textContent = 'جارٍ التأكد من الاتصال بقاعدة البيانات...';
+  const res = await testFirebaseConnection();
+  if(!res.ok){
+    document.getElementById('connStatus').textContent = 'فشل الاتصال ❌';
+    renderConnError(res);
+    return;
+  }
+  document.getElementById('connStatus').textContent = 'متصل ✅';
+  document.getElementById('connStatus').classList.add('live');
+
+  // إعادة الاتصال بعد تحديث الصفحة: إذا وُجدت جلسة محفوظة وكانت اللعبة ما زالت موجودة
+  // (بمرحلة معروفة فعلًا -- جلسة قديمة غير متوافقة لا يُوثَق بها أبدًا)، يُعاد الانضمام تلقائيًا.
+  if(savedSession && savedSession.gameCode){
+    const full = await loadFullState(savedSession.gameCode);
+    if(full && VALID_PHASES.includes(full.phase) && full.phase!=='ended' && full.players && full.players[myId]){
+      gameCode = savedSession.gameCode;
+      cachedState = full;
+      startPolling();
+      return;
+    }
+    clearSession();
+  }
+  renderHome();
+}
+boot();
+</script>
+</body>
+</html>
